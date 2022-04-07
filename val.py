@@ -26,6 +26,7 @@ from pathlib import Path
 from threading import Thread
 
 import numpy as np
+import pandas as pd
 import torch
 from tqdm import tqdm
 
@@ -269,11 +270,15 @@ def run(
     # Print results
     pf = '%20s' + '%11i' * 2 + '%11.3g' * 4  # print format
     LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    result_dict = {"all": {"images": seen, "labels": nt.sum(), "p": mp, "r": mr, "map50": map50, "map": map}}
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
             LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            result_dict[names[c]] = {"images": seen, "labels": nt[c], "p": p[i], "r": r[i], "map50": ap50[i], "map": ap[i]}
+    result_df = pd.DataFrame(result_dict).transpose()
+    result_df.to_csv(f"{save_dir}/results.csv")
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
